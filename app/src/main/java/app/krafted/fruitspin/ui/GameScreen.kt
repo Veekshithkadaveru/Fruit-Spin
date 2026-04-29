@@ -2,27 +2,55 @@ package app.krafted.fruitspin.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import app.krafted.fruitspin.ui.components.FruitWheel
+import app.krafted.fruitspin.viewmodel.GameViewModel
 
 @Composable
 fun GameScreen(
-    onGameOver: (Int) -> Unit
+    onGameOver: (Int) -> Unit,
+    viewModel: GameViewModel = viewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        var lastTime = 0L
+        while (true) {
+            withFrameNanos { time ->
+                if (lastTime == 0L) lastTime = time
+                val deltaTime = (time - lastTime) / 1_000_000_000f
+                lastTime = time
+
+                val currentState = viewModel.uiState.value
+                if (!currentState.isGameOver) {
+                    val speed = when {
+                        currentState.score < 150 -> 60f
+                        currentState.score < 300 -> 90f
+                        currentState.score < 500 -> 130f
+                        else -> 180f
+                    }
+                    val newRotation = (currentState.rotationAngle + (speed * deltaTime)) % 360f
+                    viewModel.updateRotation(newRotation)
+                }
+            }
+        }
+    }
+
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = "Game Screen",
-            color = Color.White,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold
+        FruitWheel(
+            rotationAngle = uiState.rotationAngle,
+            modifier = Modifier.fillMaxWidth(0.8f)
         )
     }
 }
