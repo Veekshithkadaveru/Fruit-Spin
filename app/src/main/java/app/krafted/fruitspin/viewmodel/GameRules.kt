@@ -33,6 +33,12 @@ internal object GameRules {
         else -> 180f
     }
 
+    fun backgroundForScore(score: Int): Int = when {
+        score < 150 -> app.krafted.fruitspin.R.drawable.back_1
+        score < 300 -> app.krafted.fruitspin.R.drawable.back_2
+        else -> app.krafted.fruitspin.R.drawable.back_3
+    }
+
     fun randomTargetDifferentFrom(current: Fruit, random: Random = Random.Default): Fruit {
         val options = Fruit.values().filter { it != current }
         return options[random.nextInt(options.size)]
