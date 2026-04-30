@@ -4,6 +4,9 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.krafted.fruitspin.data.db.AppDatabase
+import app.krafted.fruitspin.utils.TapValidator
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,6 +23,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _bestScore = MutableStateFlow(0)
     val bestScore: StateFlow<Int> = _bestScore.asStateFlow()
+
+    private var slowdownJob: Job? = null
 
     init {
         loadBestScore()
@@ -47,7 +52,40 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.update { it.copy(rotationAngle = angle) }
     }
 
+    fun advanceRotation(deltaTimeSeconds: Float) {
+        _uiState.update { GameRules.advanceRotation(it, deltaTimeSeconds) }
+    }
+
+    fun onTap() {
+        val currentState = _uiState.value
+        if (currentState.isGameOver) return
+
+        val tappedFruit = TapValidator.validateTap(currentState.rotationAngle)
+        val wasWrongTap = tappedFruit != currentState.targetFruit
+
+        _uiState.update {
+            GameRules.applyTap(it, tappedFruit) { current ->
+                GameRules.randomTargetDifferentFrom(current)
+            }
+        }
+
+        if (wasWrongTap) {
+            restoreSpeedAfterSlowdown()
+        }
+    }
+
     fun resetGame() {
+        slowdownJob?.cancel()
         _uiState.value = GameUiState()
+    }
+
+    private fun restoreSpeedAfterSlowdown() {
+        slowdownJob?.cancel()
+        slowdownJob = viewModelScope.launch {
+            delay(GameRules.WRONG_TAP_SLOWDOWN_MS)
+            _uiState.update {
+                if (it.isGameOver) it else it.copy(currentSpeedDps = GameRules.speedForScore(it.score))
+            }
+        }
     }
 }

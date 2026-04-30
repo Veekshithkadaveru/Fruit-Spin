@@ -29,17 +29,7 @@ fun GameScreen(
                 val deltaTime = (time - lastTime) / 1_000_000_000f
                 lastTime = time
 
-                val currentState = viewModel.uiState.value
-                if (!currentState.isGameOver) {
-                    val speed = when {
-                        currentState.score < 150 -> 60f
-                        currentState.score < 300 -> 90f
-                        currentState.score < 500 -> 130f
-                        else -> 180f
-                    }
-                    val newRotation = (currentState.rotationAngle + (speed * deltaTime)) % 360f
-                    viewModel.updateRotation(newRotation)
-                }
+                viewModel.advanceRotation(deltaTime)
             }
         }
     }

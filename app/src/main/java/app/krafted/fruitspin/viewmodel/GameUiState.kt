@@ -9,7 +9,7 @@ enum class Fruit(val displayName: String, val drawableRes: Int, val basePoints: 
     BANANA("Banana", R.drawable.fruit_banana, 10),
     WATERMELON("Watermelon", R.drawable.fruit_watermelon, 10),
     PLUM("Plum", R.drawable.fruit_plum, 10),
-    LUCKY_7("Lucky 7", R.drawable.fruit_lucky7, 50);
+    LUCKY_7("Lucky 7", R.drawable.fruit_lucky7, 30);
 }
 
 data class GameUiState(
