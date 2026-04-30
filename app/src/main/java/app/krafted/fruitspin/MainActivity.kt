@@ -14,6 +14,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import app.krafted.fruitspin.ui.GameOverScreen
 import app.krafted.fruitspin.ui.GameScreen
+import app.krafted.fruitspin.ui.HomeScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,8 +29,15 @@ class MainActivity : ComponentActivity() {
                     val navController = rememberNavController()
                     NavHost(
                         navController = navController,
-                        startDestination = "game"
+                        startDestination = "home"
                     ) {
+                        composable("home") {
+                            HomeScreen(
+                                onPlayClick = {
+                                    navController.navigate("game")
+                                }
+                            )
+                        }
                         composable("game") {
                             GameScreen(
                                 onGameOver = { finalScore ->
@@ -45,7 +53,12 @@ class MainActivity : ComponentActivity() {
                                 score = score,
                                 onPlayAgain = {
                                     navController.navigate("game") {
-                                        popUpTo("game_over/{score}") { inclusive = true }
+                                        popUpTo("home") { inclusive = false }
+                                    }
+                                },
+                                onMainMenu = {
+                                    navController.navigate("home") {
+                                        popUpTo("home") { inclusive = true }
                                     }
                                 }
                             )

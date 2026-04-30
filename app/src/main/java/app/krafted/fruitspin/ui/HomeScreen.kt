@@ -29,18 +29,15 @@ import app.krafted.fruitspin.R
 import app.krafted.fruitspin.viewmodel.GameViewModel
 
 @Composable
-fun GameOverScreen(
-    score: Int,
-    onPlayAgain: () -> Unit,
-    onMainMenu: () -> Unit,
+fun HomeScreen(
+    onPlayClick: () -> Unit,
     viewModel: GameViewModel = viewModel()
 ) {
     val bestScore by viewModel.bestScore.collectAsState()
-    val isNewBestScore = score > 0 && score >= bestScore
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
-            painter = painterResource(id = R.drawable.back_3),
+            painter = painterResource(id = R.drawable.back_1),
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
@@ -54,44 +51,46 @@ fun GameOverScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = if (isNewBestScore) "NEW BEST!" else "GAME OVER",
-                fontSize = 40.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (isNewBestScore) Color(0xFFFFD700) else Color.White
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Text(
-                text = "YOUR SCORE",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color.White.copy(alpha = 0.6f)
-            )
-
-            Text(
-                text = score.toString(),
-                fontSize = 72.sp,
+                text = "FRUIT SPIN",
+                fontSize = 48.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            if (!isNewBestScore) {
+            Text(
+                text = "Test Your Reflexes!",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.White.copy(alpha = 0.8f)
+            )
+
+            Spacer(modifier = Modifier.height(48.dp))
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Text(
-                    text = "BEST: $bestScore",
-                    fontSize = 20.sp,
+                    text = "BEST SCORE",
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
+                    color = Color.White.copy(alpha = 0.6f)
+                )
+                Text(
+                    text = bestScore.toString(),
+                    fontSize = 64.sp,
+                    fontWeight = FontWeight.Bold,
                     color = Color(0xFFFFD700)
                 )
             }
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(64.dp))
 
             Button(
-                onClick = onPlayAgain,
-                modifier = Modifier.size(width = 200.dp, height = 64.dp),
+                onClick = onPlayClick,
+                modifier = Modifier
+                    .size(width = 200.dp, height = 64.dp),
                 shape = RoundedCornerShape(32.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF4CAF50),
@@ -99,29 +98,19 @@ fun GameOverScreen(
                 )
             ) {
                 Text(
-                    text = "PLAY AGAIN",
-                    fontSize = 22.sp,
+                    text = "PLAY",
+                    fontSize = 24.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            Button(
-                onClick = onMainMenu,
-                modifier = Modifier.size(width = 160.dp, height = 48.dp),
-                shape = RoundedCornerShape(24.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White.copy(alpha = 0.2f),
-                    contentColor = Color.White
-                )
-            ) {
-                Text(
-                    text = "MAIN MENU",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
+            Text(
+                text = "Tap when the target fruit aligns!",
+                fontSize = 14.sp,
+                color = Color.White.copy(alpha = 0.6f)
+            )
         }
     }
 }
