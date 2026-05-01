@@ -134,7 +134,6 @@ private fun DrawScope.drawHeart(
 
         moveTo(centerX, centerY + halfSize)
 
-        // Left curve
         cubicTo(
             centerX - halfSize, centerY + halfSize * 0.5f,
             centerX - halfSize, centerY - halfSize * 0.3f,

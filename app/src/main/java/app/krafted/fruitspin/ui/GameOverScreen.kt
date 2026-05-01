@@ -380,7 +380,6 @@ fun GameOverScreen(
                                         color = RubyRed,
                                         letterSpacing = 2.sp
                                     )
-                                    // Show 0 since game over
                                     AnimatedCounter(
                                         value = 0,
                                         style = CounterTextStyle.copy(fontSize = CounterTextStyle.fontSize * 0.8),

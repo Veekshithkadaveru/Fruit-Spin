@@ -99,7 +99,7 @@ private fun AnimatedDigit(
 
     LaunchedEffect(trigger, digit) {
         val target = digit.toIntOrNull() ?: 0
-        val startValue = (target + 10 - 3) % 10 // Start a few numbers back
+        val startValue = (target + 10 - 3) % 10
 
         animatedValue.snapTo(startValue.toFloat())
         animatedValue.animateTo(

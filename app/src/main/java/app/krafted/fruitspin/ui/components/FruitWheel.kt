@@ -193,7 +193,6 @@ fun FruitWheel(
                         val imageY = center.y + imageRadius * sin(angleInRadians).toFloat()
 
                         val isTarget = fruit == targetFruit
-                        // Size is always relative to wheel radius — immune to bitmap resolution
                         val drawSize = radius * (if (isTarget) targetSizePulse else 0.33f)
                         val half = drawSize / 2f
 
@@ -201,7 +200,6 @@ fun FruitWheel(
                             degrees = startAngle + segmentAngle / 2 + 90f,
                             pivot = Offset(imageX, imageY)
                         ) {
-                            // Glow halo sized to match draw area
                             drawCircle(
                                 brush = Brush.radialGradient(
                                     colors = listOf(

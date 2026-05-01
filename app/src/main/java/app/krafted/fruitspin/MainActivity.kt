@@ -15,6 +15,7 @@ import androidx.navigation.compose.rememberNavController
 import app.krafted.fruitspin.ui.GameOverScreen
 import app.krafted.fruitspin.ui.GameScreen
 import app.krafted.fruitspin.ui.HomeScreen
+import app.krafted.fruitspin.ui.SplashScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,8 +30,17 @@ class MainActivity : ComponentActivity() {
                     val navController = rememberNavController()
                     NavHost(
                         navController = navController,
-                        startDestination = "home"
+                        startDestination = "splash"
                     ) {
+                        composable("splash") {
+                            SplashScreen(
+                                onSplashFinished = {
+                                    navController.navigate("home") {
+                                        popUpTo("splash") { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
                         composable("home") {
                             HomeScreen(
                                 onPlayClick = {

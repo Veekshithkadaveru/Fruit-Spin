@@ -66,7 +66,7 @@ fun GameScreen(
     LaunchedEffect(uiState.isGameOver) {
         if (uiState.isGameOver) {
             viewModel.saveBestScore(uiState.score)
-            delay(500) // Let animations finish
+            delay(500)
             onGameOver(uiState.score)
         }
     }

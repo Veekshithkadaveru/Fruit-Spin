@@ -60,19 +60,17 @@ fun PointerIndicator(modifier: Modifier = Modifier) {
         val width = size.width
         val height = size.height
         val centerX = width / 2
-        val tipY = 0f                       // tip points UP toward the wheel
+        val tipY = 0f
         val baseY = height * 0.6f
         val leftX = centerX - width * 0.25f
         val rightX = centerX + width * 0.25f
 
-        // Glow halo around the tip
         drawCircle(
             color = NeonGold.copy(alpha = glowAlpha.value * 0.5f),
             radius = width * 0.6f,
             center = Offset(centerX, tipY + width * 0.1f)
         )
 
-        // Left wing → tip
         drawLine(
             brush = Brush.linearGradient(
                 colors = listOf(MetallicGold, NeonGold),
@@ -85,7 +83,6 @@ fun PointerIndicator(modifier: Modifier = Modifier) {
             cap = StrokeCap.Round
         )
 
-        // Right wing → tip
         drawLine(
             brush = Brush.linearGradient(
                 colors = listOf(MetallicGold, NeonGold),
@@ -98,7 +95,6 @@ fun PointerIndicator(modifier: Modifier = Modifier) {
             cap = StrokeCap.Round
         )
 
-        // Vertical stem downward from base
         drawLine(
             brush = Brush.verticalGradient(
                 colors = listOf(NeonGold, MetallicGold),

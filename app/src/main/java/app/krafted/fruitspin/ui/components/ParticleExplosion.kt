@@ -210,7 +210,6 @@ fun FireworkExplosion(
     primaryColor: Color = MetallicGold,
     onComplete: () -> Unit = {}
 ) {
-    // Create color variants by shifting hue
     val shiftedColor = shiftHue(primaryColor, 30f)
     ParticleExplosion(
         modifier = modifier,

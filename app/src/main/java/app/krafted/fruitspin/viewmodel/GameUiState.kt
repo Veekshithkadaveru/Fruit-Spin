@@ -23,6 +23,7 @@ data class GameUiState(
     val targetFruit: Fruit = Fruit.GRAPES,
     val lives: Int = 3,
     val score: Int = 0,
+    val totalCorrectTaps: Int = 0,
     val correctStreak: Int = 0,
     val scoreMultiplier: Int = 1,
     val backgroundImage: Int = R.drawable.back_1,

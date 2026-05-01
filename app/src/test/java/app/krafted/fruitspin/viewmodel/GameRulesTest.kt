@@ -21,14 +21,14 @@ class GameRulesTest {
     }
 
     @Test
-    fun lucky7AddsThirtyBasePoints() {
+    fun lucky7AddsJackpotPoints() {
         val state = GameRules.applyTap(
             state = GameUiState(targetFruit = Fruit.LUCKY_7),
             tappedFruit = Fruit.LUCKY_7,
             nextTarget = { Fruit.ORANGE }
         )
 
-        assertEquals(30, state.score)
+        assertEquals(150, state.score)
     }
 
     @Test
@@ -73,6 +73,7 @@ class GameRulesTest {
                 correctStreak = 12,
                 scoreMultiplier = 2,
                 currentSpeedDps = 90f,
+                totalCorrectTaps = 9,
                 correctTapsForCurrentTarget = 3
             ),
             tappedFruit = Fruit.ORANGE,
@@ -101,13 +102,13 @@ class GameRulesTest {
 
     @Test
     fun speedThresholdsAndSlowdownUseCurrentSpeedState() {
-        assertEquals(60f, GameRules.speedForScore(149))
-        assertEquals(90f, GameRules.speedForScore(150))
-        assertEquals(130f, GameRules.speedForScore(300))
-        assertEquals(180f, GameRules.speedForScore(500))
+        assertEquals(60f,  GameRules.speedForTaps(4))
+        assertEquals(90f,  GameRules.speedForTaps(9))
+        assertEquals(130f, GameRules.speedForTaps(15))
+        assertEquals(170f, GameRules.speedForTaps(30))
 
         val slowed = GameRules.applyTap(
-            state = GameUiState(targetFruit = Fruit.GRAPES, score = 150, currentSpeedDps = 90f),
+            state = GameUiState(targetFruit = Fruit.GRAPES, score = 150, currentSpeedDps = 90f, totalCorrectTaps = 9),
             tappedFruit = Fruit.ORANGE,
             nextTarget = { Fruit.STRAWBERRY }
         )

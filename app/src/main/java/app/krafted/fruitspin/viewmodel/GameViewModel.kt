@@ -142,7 +142,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         slowdownJob = viewModelScope.launch {
             delay(GameRules.WRONG_TAP_SLOWDOWN_MS)
             _uiState.update {
-                if (it.isGameOver) it else it.copy(currentSpeedDps = GameRules.speedForScore(it.score))
+                if (it.isGameOver) it else it.copy(currentSpeedDps = GameRules.speedForTaps(it.totalCorrectTaps))
             }
         }
     }
