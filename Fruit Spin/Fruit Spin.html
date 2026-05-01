@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fruit Spin</title>
+<link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+html,body { width:100%; height:100%; overflow:hidden; background:#0a0005; font-family:'Russo One',sans-serif; }
+
+@keyframes floatY { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+@keyframes titleGlow {
+  0%,100%{filter:drop-shadow(0 0 12px #ffd700) drop-shadow(0 0 30px #ff4400);}
+  50%{filter:drop-shadow(0 0 24px #ffd700) drop-shadow(0 0 60px #ff4400);}
+}
+@keyframes pulseRing {
+  0%,100%{box-shadow:0 0 0 0 rgba(255,215,0,0.7);}
+  50%{box-shadow:0 0 0 16px rgba(255,215,0,0);}
+}
+@keyframes fadeIn { from{opacity:0;transform:scale(0.95)} to{opacity:1;transform:scale(1)} }
+@keyframes scoreFloat {
+  0%{opacity:1;transform:translateY(0) scale(1);}
+  100%{opacity:0;transform:translateY(-80px) scale(1.4);}
+}
+@keyframes shake {
+  0%,100%{transform:translateX(0);}
+  20%{transform:translateX(-10px);}
+  40%{transform:translateX(10px);}
+  60%{transform:translateX(-8px);}
+  80%{transform:translateX(8px);}
+}
+@keyframes crackLife {
+  0%{transform:scale(1);filter:none;}
+  30%{transform:scale(1.3);filter:brightness(3) saturate(0);}
+  100%{transform:scale(0);opacity:0;}
+}
+@keyframes correctFlash {
+  0%,100%{background:transparent;}
+  50%{background:rgba(0,255,80,0.25);}
+}
+@keyframes wrongFlash {
+  0%,100%{background:transparent;}
+  50%{background:rgba(255,0,0,0.35);}
+}
+@keyframes jackpotFlash {
+  0%,100%{background:transparent;}
+  30%{background:rgba(255,215,0,0.5);}
+  60%{background:rgba(255,215,0,0.3);}
+}
+@keyframes cardFlip {
+  0%{transform:scaleX(1);}
+  50%{transform:scaleX(0);}
+  100%{transform:scaleX(1);}
+}
+@keyframes wheelReveal {
+  0%{transform:scale(0) rotate(-180deg); opacity:0;}
+  70%{transform:scale(1.1) rotate(10deg); opacity:1;}
+  100%{transform:scale(1) rotate(0deg); opacity:1;}
+}
+@keyframes speedBurst {
+  0%{box-shadow:0 0 0 0 rgba(255,255,255,0);}
+  50%{box-shadow:0 0 30px 10px rgba(255,255,255,0.6);}
+  100%{box-shadow:0 0 0 0 rgba(255,255,255,0);}
+}
+@keyframes spinIn {
+  0%{transform:rotate(0deg) scale(0); opacity:0;}
+  100%{transform:rotate(720deg) scale(1); opacity:1;}
+}
+@keyframes bounceIn {
+  0%{transform:scale(0); opacity:0;}
+  60%{transform:scale(1.2);}
+  100%{transform:scale(1); opacity:1;}
+}
+@keyframes pointerBounce {
+  0%,100%{transform:translateX(-50%) scaleY(1);}
+  50%{transform:translateX(-50%) scaleY(1.3);}
+}
+@keyframes targetFlip {
+  0%{transform:scaleX(1);}
+  50%{transform:scaleX(0);}
+  100%{transform:scaleX(1);}
+}
+@keyframes overlayFadeIn {
+  from{opacity:0;} to{opacity:1;}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+const FRUITS = [
+  { id:'grapes',     img:'uploads/5.png', points:10, color:'#6A1B9A', glow:'#9c27b0', name:'Grapes'     },
+  { id:'strawberry', img:'uploads/4.png', points:15, color:'#C62828', glow:'#f44336', name:'Strawberry' },
+  { id:'orange',     img:'uploads/3.png', points:15, color:'#E65100', glow:'#ff9800', name:'Orange'     },
+  { id:'banana',     img:'uploads/6.png', points:20, color:'#F9A825', glow:'#ffeb3b', name:'Banana'     },
+  { id:'watermelon', img:'uploads/2.png', points:20, color:'#2E7D32', glow:'#4caf50', name:'Watermelon' },
+  { id:'plum',       img:'uploads/1.png', points:25, color:'#4A148C', glow:'#7b1fa2', name:'Plum'       },
+  { id:'seven',      img:'uploads/7.png', points:50, color:'#FFD600', glow:'#ffd700', name:'Lucky 7'    },
+];
+
+const SEG_ANGLE = 360 / 7;
+const POINTER_DEG = 90; // canvas: 90° = bottom (6 o'clock)
+const TOLERANCE = 15;
+
+function getSpeedDps(score) {
+  if (score < 50)  return 60;
+  if (score < 150) return 90;
+  if (score < 300) return 130;
+  if (score < 500) return 170;
+  return 210;
+}
+
+function weightedRandom(exclude) {
+  const weights = [18,17,17,15,15,12,6];
+  let pool = [];
+  FRUITS.forEach((f,i) => { if (f.id !== exclude) for(let j=0;j<weights[i];j++) pool.push(f); });
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+
+function getFruitAtPointer(rotation) {
+  // pointer at 90° canvas. find segment whose center is closest to 90°
+  let best = null, bestDist = Infinity;
+  FRUITS.forEach((fruit, i) => {
+    const center = ((rotation + i * SEG_ANGLE + SEG_ANGLE / 2) % 360 + 360) % 360;
+    let dist = Math.abs(center - POINTER_DEG);
+    if (dist > 180) dist = 360 - dist;
+    if (dist < bestDist) { bestDist = dist; best = { fruit, dist }; }
+  });
+  return best;
+}
+
+// ── Wheel Canvas ──────────────────────────────────────────────────────────────
+function WheelCanvas({ rotation, size, tapFeedback, targetId }) {
+  const canvasRef = useRef(null);
+  const imagesRef = useRef({});
+  const [imagesLoaded, setImagesLoaded] = useState(0);
+
+  useEffect(() => {
+    let loaded = 0;
+    FRUITS.forEach(f => {
+      const img = new Image();
+      img.onload = () => { loaded++; setImagesLoaded(loaded); };
+      img.src = f.img;
+      imagesRef.current[f.id] = img;
+    });
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    const cx = W/2, cy = H/2;
+    const R = Math.min(W,H)/2 - 6;
+    const segRad = (2*Math.PI)/7;
+    const rotRad = (rotation*Math.PI)/180;
+
+    ctx.clearRect(0,0,W,H);
+
+    // Outer glow ring
+    const gradient = ctx.createRadialGradient(cx,cy,R-4,cx,cy,R+12);
+    gradient.addColorStop(0, 'rgba(255,215,0,0.8)');
+    gradient.addColorStop(1, 'rgba(255,100,0,0)');
+    ctx.beginPath();
+    ctx.arc(cx,cy,R+8,0,2*Math.PI);
+    ctx.fillStyle = gradient;
+    ctx.fill();
+
+    FRUITS.forEach((fruit, i) => {
+      const startA = rotRad + i*segRad;
+      const endA = startA + segRad;
+      const midA = startA + segRad/2;
+
+      // Segment fill
+      ctx.beginPath();
+      ctx.moveTo(cx,cy);
+      ctx.arc(cx,cy,R,startA,endA);
+      ctx.closePath();
+
+      // Lighter version for top highlight
+      const segGrad = ctx.createRadialGradient(
+        cx + Math.cos(midA)*R*0.4, cy + Math.sin(midA)*R*0.4, 0,
+        cx, cy, R
+      );
+      segGrad.addColorStop(0, lighten(fruit.color, 0.3));
+      segGrad.addColorStop(1, fruit.color);
+      ctx.fillStyle = segGrad;
+      ctx.fill();
+
+      // Segment border
+      ctx.beginPath();
+      ctx.moveTo(cx,cy);
+      ctx.arc(cx,cy,R,startA,endA);
+      ctx.closePath();
+      ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      // Fruit image
+      const imgR = R * 0.62;
+      const imgX = cx + Math.cos(midA)*imgR;
+      const imgY = cy + Math.sin(midA)*imgR;
+      const imgSize = R * 0.38;
+      const img = imagesRef.current[fruit.id];
+      if (img && img.complete && img.naturalWidth > 0) {
+        ctx.save();
+        ctx.translate(imgX, imgY);
+        // Highlight target fruit
+        if (fruit.id === targetId) {
+          ctx.shadowColor = fruit.glow;
+          ctx.shadowBlur = 20;
+        }
+        ctx.drawImage(img, -imgSize/2, -imgSize/2, imgSize, imgSize);
+        ctx.restore();
+      }
+    });
+
+    // Center cap
+    const capGrad = ctx.createRadialGradient(cx-R*0.04,cy-R*0.04,0,cx,cy,R*0.16);
+    capGrad.addColorStop(0,'#5a0000');
+    capGrad.addColorStop(1,'#1a0000');
+    ctx.beginPath();
+    ctx.arc(cx,cy,R*0.16,0,2*Math.PI);
+    ctx.fillStyle = capGrad;
+    ctx.fill();
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Center logo
+    ctx.fillStyle = '#ffd700';
+    ctx.font = `bold ${R*0.1}px Russo One`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('FS', cx, cy);
+
+    // Outer border ring
+    ctx.beginPath();
+    ctx.arc(cx,cy,R,0,2*Math.PI);
+    ctx.strokeStyle = tapFeedback === 'correct' ? '#00ff55'
+                    : tapFeedback === 'jackpot' ? '#ffd700'
+                    : tapFeedback === 'wrong'   ? '#ff2200'
+                    : '#ffd700';
+    ctx.lineWidth = tapFeedback ? 6 : 4;
+    ctx.stroke();
+
+  }, [rotation, imagesLoaded, tapFeedback, targetId]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      width={size}
+      height={size}
+      style={{ display:'block', borderRadius:'50%' }}
+    />
+  );
+}
+
+function lighten(hex, amt) {
+  const num = parseInt(hex.replace('#',''), 16);
+  const r = Math.min(255, (num>>16) + Math.round(255*amt));
+  const g = Math.min(255, ((num>>8)&0xff) + Math.round(255*amt));
+  const b = Math.min(255, (num&0xff) + Math.round(255*amt));
+  return `rgb(${r},${g},${b})`;
+}
+
+// ── Score Float ────────────────────────────────────────────────────────────────
+function ScoreFloat({ value, color, key }) {
+  return (
+    <div style={{
+      position:'absolute', top:'40%', left:'50%', transform:'translateX(-50%)',
+      fontFamily:'Russo One', fontSize: value.toString().length > 6 ? 22 : 28,
+      color, fontWeight:900,
+      textShadow:`0 0 12px ${color}`,
+      animation:'scoreFloat 0.9s ease-out forwards',
+      pointerEvents:'none', zIndex:20, whiteSpace:'nowrap',
+    }}>{value}</div>
+  );
+}
+
+// ── Lives Display ─────────────────────────────────────────────────────────────
+function LivesDisplay({ lives, prevLives }) {
+  return (
+    <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+      {[0,1,2].map(i => {
+        const alive = i < lives;
+        const justLost = i === lives && prevLives > lives;
+        return (
+          <div key={i} style={{
+            fontSize:22,
+            animation: justLost ? 'crackLife 0.4s ease-out forwards' : 'none',
+            filter: alive ? 'none' : 'grayscale(1) brightness(0.4)',
+            transition:'filter 0.3s',
+          }}>❤️</div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── BG ────────────────────────────────────────────────────────────────────────
+function Background({ children }) {
+  const [bgIdx, setBgIdx] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setBgIdx(i=>(i+1)%5), 5000);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div style={{
+      width:'100vw', height:'100vh', position:'relative', overflow:'hidden',
+      display:'flex', alignItems:'center', justifyContent:'center',
+    }}>
+      <div style={{
+        position:'absolute', inset:0, zIndex:0,
+        backgroundImage:`url(uploads/back_${bgIdx+1}.png)`,
+        backgroundSize:'cover', backgroundPosition:'center',
+        transition:'background-image 1.5s ease',
+        opacity:0.9,
+      }}/>
+      <div style={{
+        position:'absolute', inset:0, zIndex:1,
+        background:'radial-gradient(ellipse at center, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.75) 100%)',
+      }}/>
+      <div style={{ position:'relative', zIndex:2, width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center' }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ── SPLASH SCREEN ─────────────────────────────────────────────────────────────
+function SplashScreen({ onDone }) {
+  const [phase, setPhase] = useState(0);
+  const [rot, setRot] = useState(0);
+  const rafRef = useRef(null);
+  const lastRef = useRef(null);
+
+  useEffect(() => {
+    let speed = 40;
+    function loop(ts) {
+      if (!lastRef.current) lastRef.current = ts;
+      const dt = (ts - lastRef.current)/1000;
+      lastRef.current = ts;
+      speed = Math.min(speed + 30*dt, 180);
+      setRot(r => (r + speed*dt)%360);
+      rafRef.current = requestAnimationFrame(loop);
+    }
+    rafRef.current = requestAnimationFrame(loop);
+    const t1 = setTimeout(() => setPhase(1), 600);
+    const t2 = setTimeout(() => setPhase(2), 1400);
+    const t3 = setTimeout(() => onDone(), 3000);
+    return () => { cancelAnimationFrame(rafRef.current); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, []);
+
+  return (
+    <Background>
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:24 }}>
+        <div style={{
+          animation: phase>=0 ? 'wheelReveal 0.8s cubic-bezier(0.34,1.56,0.64,1) both' : 'none',
+        }}>
+          <WheelCanvas rotation={rot} size={260} tapFeedback={null} targetId={null}/>
+        </div>
+        {phase >= 1 && (
+          <div style={{ textAlign:'center', animation:'bounceIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both' }}>
+            <div style={{
+              fontFamily:'Russo One', fontSize:60, lineHeight:1,
+              background:'linear-gradient(180deg,#ffe566,#ffd700 40%,#ff8c00 70%,#ff4400)',
+              WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
+              animation:'titleGlow 2s ease-in-out infinite',
+              filter:'drop-shadow(0 4px 8px rgba(255,100,0,0.8))',
+            }}>FRUIT</div>
+            <div style={{
+              fontFamily:'Russo One', fontSize:42, letterSpacing:10,
+              background:'linear-gradient(180deg,#fff,#ffd700 50%,#ff6600)',
+              WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
+              filter:'drop-shadow(0 2px 6px rgba(255,200,0,0.9))',
+            }}>SPIN</div>
+          </div>
+        )}
+        {phase >= 2 && (
+          <div style={{ fontFamily:'Orbitron', fontSize:14, color:'#ff6600', letterSpacing:4, animation:'fadeIn 0.4s ease-out' }}>
+            LOADING...
+          </div>
+        )}
+      </div>
+    </Background>
+  );
+}
+
+// ── HOME SCREEN ───────────────────────────────────────────────────────────────
+function HomeScreen({ bestScore, bestStreak, onPlay }) {
+  const [rot, setRot] = useState(0);
+  const rafRef = useRef(null);
+  const lastRef = useRef(null);
+
+  useEffect(() => {
+    function loop(ts) {
+      if (!lastRef.current) lastRef.current = ts;
+      const dt = (ts - lastRef.current)/1000;
+      lastRef.current = ts;
+      setRot(r=>(r+50*dt)%360);
+      rafRef.current = requestAnimationFrame(loop);
+    }
+    rafRef.current = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, []);
+
+  return (
+    <Background>
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:16, padding:24, width:390, animation:'fadeIn 0.4s ease-out' }}>
+        {/* Title */}
+        <div style={{ textAlign:'center', animation:'floatY 3s ease-in-out infinite' }}>
+          <div style={{
+            fontFamily:'Russo One', fontSize:58, lineHeight:1,
+            background:'linear-gradient(180deg,#ffe566,#ffd700 40%,#ff8c00 70%,#ff4400)',
+            WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
+            animation:'titleGlow 2s ease-in-out infinite',
+          }}>FRUIT</div>
+          <div style={{
+            fontFamily:'Russo One', fontSize:40, letterSpacing:10,
+            background:'linear-gradient(180deg,#fff,#ffd700 50%,#ff6600)',
+            WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
+          }}>SPIN</div>
+        </div>
+
+        {/* Mini wheel */}
+        <div style={{ position:'relative' }}>
+          <WheelCanvas rotation={rot} size={200} tapFeedback={null} targetId="seven"/>
+          {/* Pointer */}
+          <div style={{
+            position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)',
+            width:0, height:0,
+            borderLeft:'12px solid transparent',
+            borderRight:'12px solid transparent',
+            borderBottom:'22px solid #ffd700',
+            filter:'drop-shadow(0 0 6px #ffd700)',
+          }}/>
+        </div>
+
+        {/* Stats */}
+        <div style={{ display:'flex', gap:12, width:'100%' }}>
+          {[['BEST SCORE', bestScore], ['BEST STREAK', bestStreak]].map(([label, val]) => (
+            <div key={label} style={{
+              flex:1, textAlign:'center',
+              background:'linear-gradient(135deg,rgba(0,0,0,0.85),rgba(40,0,0,0.9))',
+              border:'2px solid #8b0000', borderRadius:14,
+              boxShadow:'inset 0 2px 4px rgba(0,0,0,0.5), 0 0 12px rgba(255,0,0,0.2)',
+              padding:'10px 0',
+            }}>
+              <div style={{ fontFamily:'Orbitron', fontSize:9, color:'#ff6600', letterSpacing:2, marginBottom:4 }}>{label}</div>
+              <div style={{ fontFamily:'Orbitron', fontSize:26, color:'#ffd700', fontWeight:900, textShadow:'0 0 10px #ffd700' }}>{val}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Play button */}
+        <button onClick={onPlay} style={{
+          width:'100%', height:70, borderRadius:18, marginTop:8,
+          background:'linear-gradient(135deg,#ff2200,#cc0000 50%,#880000)',
+          border:'3px solid #ffd700',
+          boxShadow:'0 0 20px rgba(255,0,0,0.6), 0 0 40px rgba(255,100,0,0.3), inset 0 2px 4px rgba(255,255,255,0.1)',
+          fontFamily:'Russo One', fontSize:32, letterSpacing:6, color:'#ffd700',
+          textShadow:'0 0 10px rgba(255,215,0,0.8)',
+          cursor:'pointer', animation:'pulseRing 2s infinite',
+        }}>▶ PLAY</button>
+
+        {/* How to play */}
+        <div style={{
+          background:'rgba(0,0,0,0.6)', border:'1px solid #3d0000', borderRadius:12,
+          padding:'12px 16px', width:'100%',
+        }}>
+          <div style={{ fontFamily:'Orbitron', fontSize:10, color:'#ff6600', letterSpacing:3, marginBottom:8, textAlign:'center' }}>HOW TO PLAY</div>
+          <div style={{ fontFamily:'Russo One', fontSize:13, color:'#ccc', lineHeight:1.6, textAlign:'center' }}>
+            Watch the spinning wheel 🎡<br/>
+            Tap <span style={{color:'#ffd700'}}>TAP!</span> when the target fruit<br/>
+            reaches the <span style={{color:'#ffd700'}}>▲ pointer</span> at the bottom<br/>
+            3 lives · Target changes every 5 hits
+          </div>
+        </div>
+      </div>
+    </Background>
+  );
+}
+
+// ── GAME SCREEN ───────────────────────────────────────────────────────────────
+function GameScreen({ onGameOver, bestScore }) {
+  const [rotation, setRotation] = useState(0);
+  const [score, setScore] = useState(0);
+  const [lives, setLives] = useState(3);
+  const [prevLives, setPrevLives] = useState(3);
+  const [targetFruit, setTargetFruit] = useState(() => FRUITS[0]);
+  const [totalCorrect, setTotalCorrect] = useState(0);
+  const [speedDps, setSpeedDps] = useState(60);
+  const [tapFeedback, setTapFeedback] = useState(null); // 'correct'|'wrong'|'jackpot'
+  const [floats, setFloats] = useState([]);
+  const [tapsToChange, setTapsToChange] = useState(5);
+  const [targetFlipping, setTargetFlipping] = useState(false);
+  const [shaking, setShaking] = useState(false);
+  const [speedBurst, setSpeedBurst] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
+
+  const rotRef = useRef(0);
+  const speedRef = useRef(60);
+  const livesRef = useRef(3);
+  const gameOverRef = useRef(false);
+  const rafRef = useRef(null);
+  const lastRef = useRef(null);
+  const floatId = useRef(0);
+
+  useEffect(() => { rotRef.current = rotation; }, [rotation]);
+  useEffect(() => { speedRef.current = speedDps; }, [speedDps]);
+  useEffect(() => { livesRef.current = lives; }, [lives]);
+
+  // Game loop
+  useEffect(() => {
+    function loop(ts) {
+      if (gameOverRef.current) return;
+      if (!lastRef.current) lastRef.current = ts;
+      const dt = (ts - lastRef.current)/1000;
+      lastRef.current = ts;
+      const newRot = (rotRef.current + speedRef.current * dt) % 360;
+      rotRef.current = newRot;
+      setRotation(newRot);
+      rafRef.current = requestAnimationFrame(loop);
+    }
+    rafRef.current = requestAnimationFrame(loop);
+    return () => { cancelAnimationFrame(rafRef.current); };
+  }, []);
+
+  function addFloat(text, color) {
+    const id = floatId.current++;
+    setFloats(f => [...f, { id, text, color }]);
+    setTimeout(() => setFloats(f => f.filter(x => x.id !== id)), 900);
+  }
+
+  function assignNewTarget(excludeId) {
+    setTargetFlipping(true);
+    setTimeout(() => {
+      const next = weightedRandom(excludeId);
+      setTargetFruit(next);
+      setTapsToChange(5);
+      setTargetFlipping(false);
+    }, 250);
+  }
+
+  function onTap() {
+    if (gameOverRef.current) return;
+    const { fruit, dist } = getFruitAtPointer(rotRef.current);
+
+    if (dist <= TOLERANCE) {
+      // Something is at pointer - check if it's target
+      // We check target more permissively
+    }
+
+    // Check if TARGET fruit is at pointer
+    const targetResult = getFruitAtPointer(rotRef.current);
+    // Actually find if target fruit specifically is near pointer
+    const targetIdx = FRUITS.findIndex(f=>f.id===targetFruit.id);
+    const targetCenter = ((rotRef.current + targetIdx*SEG_ANGLE + SEG_ANGLE/2) % 360 + 360) % 360;
+    let targetDist = Math.abs(targetCenter - POINTER_DEG);
+    if (targetDist > 180) targetDist = 360 - targetDist;
+
+    if (targetDist <= TOLERANCE) {
+      // CORRECT
+      const isLucky = targetFruit.id === 'seven';
+      const pts = isLucky ? targetFruit.points * 3 : targetFruit.points;
+      const newScore = score + pts;
+      setScore(newScore);
+
+      const fb = isLucky ? 'jackpot' : 'correct';
+      setTapFeedback(fb);
+      setTimeout(() => setTapFeedback(null), 350);
+
+      addFloat(isLucky ? `🎰 JACKPOT! +${pts}` : `+${pts}`, isLucky ? '#ffd700' : '#00ff88');
+
+      const newCorrect = totalCorrect + 1;
+      setTotalCorrect(newCorrect);
+
+      const newTapsLeft = tapsToChange - 1;
+      if (newTapsLeft <= 0) {
+        assignNewTarget(targetFruit.id);
+      } else {
+        setTapsToChange(newTapsLeft);
+      }
+
+      // Speed up
+      const newSpeed = getSpeedDps(newScore);
+      if (newSpeed > speedRef.current) {
+        setSpeedBurst(true);
+        setTimeout(() => setSpeedBurst(false), 400);
+      }
+      speedRef.current = newSpeed;
+      setSpeedDps(newSpeed);
+
+    } else {
+      // WRONG — but only penalise if something else is at pointer (not just tapping in void)
+      const { dist: closestDist } = getFruitAtPointer(rotRef.current);
+      if (closestDist <= TOLERANCE + 5) {
+        // A different fruit is there — wrong tap
+        const newLives = livesRef.current - 1;
+        setPrevLives(livesRef.current);
+        setLives(newLives);
+        livesRef.current = newLives;
+
+        setTapFeedback('wrong');
+        setTimeout(() => setTapFeedback(null), 350);
+        setShaking(true);
+        setTimeout(() => setShaking(false), 500);
+        addFloat('WRONG! -1 ❤️', '#ff4444');
+
+        // Slow down briefly
+        const slowSpeed = speedRef.current * 0.7;
+        speedRef.current = slowSpeed;
+        setSpeedDps(slowSpeed);
+        setTimeout(() => {
+          const s = getSpeedDps(score);
+          speedRef.current = s;
+          setSpeedDps(s);
+        }, 1000);
+
+        if (newLives <= 0) {
+          gameOverRef.current = true;
+          setGameOver(true);
+          cancelAnimationFrame(rafRef.current);
+          // Slow wheel to stop
+          setTimeout(() => onGameOver({ score, totalCorrect }), 1200);
+        }
+      } else {
+        // Tapped when nothing was near — missed tap, no penalty just feedback
+        addFloat('MISS!', '#ff8800');
+      }
+    }
+  }
+
+  const wheelSize = 310;
+
+  return (
+    <Background>
+      <div
+        style={{
+          display:'flex', flexDirection:'column', alignItems:'center',
+          width:390, height:'100vh', padding:'12px 16px',
+          animation: shaking ? 'shake 0.4s ease-out' : 'none',
+          position:'relative',
+        }}
+      >
+        {/* Flash overlay */}
+        <div style={{
+          position:'absolute', inset:0, zIndex:30, pointerEvents:'none',
+          animation: tapFeedback === 'correct' ? 'correctFlash 0.35s ease-out'
+                   : tapFeedback === 'wrong'   ? 'wrongFlash 0.35s ease-out'
+                   : tapFeedback === 'jackpot' ? 'jackpotFlash 0.5s ease-out'
+                   : 'none',
+          borderRadius:0,
+        }}/>
+
+        {/* Score floats */}
+        {floats.map(f => <ScoreFloat key={f.id} value={f.text} color={f.color}/>)}
+
+        {/* Top bar */}
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', width:'100%', marginBottom:10 }}>
+          <div style={{
+            background:'rgba(0,0,0,0.7)', border:'2px solid #8b0000', borderRadius:12,
+            padding:'6px 14px',
+          }}>
+            <div style={{ fontFamily:'Orbitron', fontSize:9, color:'#ff6600', letterSpacing:2 }}>SCORE</div>
+            <div style={{ fontFamily:'Orbitron', fontSize:22, color:'#ffd700', fontWeight:900, textShadow:'0 0 8px #ffd700' }}>{score}</div>
+          </div>
+
+          <LivesDisplay lives={lives} prevLives={prevLives}/>
+
+          <div style={{
+            background:'rgba(0,0,0,0.7)', border:'2px solid #8b0000', borderRadius:12,
+            padding:'6px 14px', textAlign:'right',
+          }}>
+            <div style={{ fontFamily:'Orbitron', fontSize:9, color:'#ff6600', letterSpacing:2 }}>BEST</div>
+            <div style={{ fontFamily:'Orbitron', fontSize:22, color:'#aaa', fontWeight:900 }}>{Math.max(bestScore,score)}</div>
+          </div>
+        </div>
+
+        {/* Target display */}
+        <div style={{
+          background:'linear-gradient(135deg,rgba(0,0,0,0.85),rgba(40,0,0,0.9))',
+          border:`2px solid ${targetFruit.glow}`,
+          borderRadius:16,
+          boxShadow:`0 0 16px ${targetFruit.glow}44`,
+          padding:'8px 20px', width:'100%', marginBottom:10,
+          display:'flex', alignItems:'center', justifyContent:'space-between',
+          animation: targetFlipping ? 'targetFlip 0.5s ease-in-out' : 'none',
+        }}>
+          <div>
+            <div style={{ fontFamily:'Orbitron', fontSize:9, color:'#ff6600', letterSpacing:3, marginBottom:2 }}>TARGET FRUIT</div>
+            <div style={{ fontFamily:'Russo One', fontSize:22, color:'#fff', textShadow:`0 0 8px ${targetFruit.glow}` }}>
+              {targetFruit.name}
+            </div>
+            <div style={{ fontFamily:'Orbitron', fontSize:9, color:'#888', marginTop:2 }}>
+              Hit <span style={{color:'#ffd700'}}>{tapsToChange}</span> more to change · +{targetFruit.id==='seven'?targetFruit.points*3:targetFruit.points}pts
+            </div>
+          </div>
+          <div style={{ position:'relative' }}>
+            <img src={targetFruit.img} alt={targetFruit.name} style={{
+              width:64, height:64, objectFit:'contain',
+              filter:`drop-shadow(0 0 10px ${targetFruit.glow})`,
+              animation:'floatY 2s ease-in-out infinite',
+            }}/>
+            {targetFruit.id === 'seven' && (
+              <div style={{
+                position:'absolute', top:-6, right:-6, background:'#ffd700',
+                borderRadius:6, padding:'1px 5px',
+                fontFamily:'Orbitron', fontSize:8, color:'#000', fontWeight:900,
+              }}>3×</div>
+            )}
+          </div>
+        </div>
+
+        {/* Speed indicator */}
+        <div style={{ width:'100%', marginBottom:8, display:'flex', alignItems:'center', gap:8 }}>
+          <div style={{ fontFamily:'Orbitron', fontSize:9, color:'#ff6600', letterSpacing:2, whiteSpace:'nowrap' }}>SPEED</div>
+          <div style={{ flex:1, height:6, background:'rgba(0,0,0,0.5)', borderRadius:3, overflow:'hidden', border:'1px solid #3d0000' }}>
+            <div style={{
+              height:'100%', borderRadius:3, transition:'width 0.5s ease',
+              width:`${Math.min(100, (speedDps/210)*100)}%`,
+              background:'linear-gradient(90deg,#ff4400,#ffd700)',
+              boxShadow:'0 0 6px #ff6600',
+              animation: speedBurst ? 'speedBurst 0.4s ease-out' : 'none',
+            }}/>
+          </div>
+          <div style={{ fontFamily:'Orbitron', fontSize:9, color:'#ffd700', whiteSpace:'nowrap' }}>{Math.round(speedDps)}°/s</div>
+        </div>
+
+        {/* Wheel area */}
+        <div
+          onClick={onTap}
+          style={{
+            position:'relative', cursor:'pointer',
+            animation: speedBurst ? 'speedBurst 0.4s ease-out' : 'none',
+          }}
+        >
+          <WheelCanvas rotation={rotation} size={wheelSize} tapFeedback={tapFeedback} targetId={targetFruit.id}/>
+
+          {/* Pointer at bottom */}
+          <div style={{
+            position:'absolute', bottom:-10, left:'50%',
+            transform:'translateX(-50%)',
+            display:'flex', flexDirection:'column', alignItems:'center', gap:2,
+          }}>
+            <div style={{
+              width:0, height:0,
+              borderLeft:'14px solid transparent',
+              borderRight:'14px solid transparent',
+              borderBottom:'26px solid #ffd700',
+              filter:'drop-shadow(0 0 8px #ffd700)',
+              animation:'pointerBounce 1s ease-in-out infinite',
+            }}/>
+            <div style={{ fontFamily:'Orbitron', fontSize:8, color:'#ffd700', letterSpacing:2 }}>TAP HERE</div>
+          </div>
+        </div>
+
+        {/* TAP button */}
+        <button
+          onClick={onTap}
+          style={{
+            marginTop:22, width:'100%', height:68, borderRadius:18,
+            background: tapFeedback === 'correct' ? 'linear-gradient(135deg,#006600,#004400)'
+                      : tapFeedback === 'wrong'   ? 'linear-gradient(135deg,#660000,#440000)'
+                      : tapFeedback === 'jackpot' ? 'linear-gradient(135deg,#665500,#443300)'
+                      : 'linear-gradient(135deg,#ff2200,#cc0000 50%,#880000)',
+            border:`3px solid ${tapFeedback==='correct'?'#00ff55':tapFeedback==='jackpot'?'#ffd700':'#ffd700'}`,
+            boxShadow: tapFeedback
+              ? `0 0 30px ${tapFeedback==='correct'?'#00ff55':tapFeedback==='jackpot'?'#ffd700':'#ff0000'}`
+              : '0 0 20px rgba(255,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.1)',
+            fontFamily:'Russo One', fontSize:34, letterSpacing:8, color:'#ffd700',
+            textShadow:'0 0 12px rgba(255,215,0,0.9)',
+            cursor:'pointer', transition:'all 0.1s',
+          }}
+        >TAP!</button>
+
+      </div>
+    </Background>
+  );
+}
+
+// ── GAME OVER SCREEN ──────────────────────────────────────────────────────────
+function GameOverScreen({ score, totalCorrect, bestScore, onPlayAgain, onHome }) {
+  const isNewBest = score >= bestScore;
+  return (
+    <Background>
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:16, padding:24, width:390, animation:'fadeIn 0.5s ease-out' }}>
+
+        <div style={{ textAlign:'center' }}>
+          <div style={{ fontFamily:'Russo One', fontSize:52, color:'#ff2200', textShadow:'0 0 20px #ff0000, 0 0 40px #ff0000', animation:'titleGlow 1s infinite' }}>
+            GAME
+          </div>
+          <div style={{ fontFamily:'Russo One', fontSize:52, color:'#ff2200', textShadow:'0 0 20px #ff0000, 0 0 40px #ff0000', animation:'titleGlow 1s infinite' }}>
+            OVER
+          </div>
+        </div>
+
+        {isNewBest && (
+          <div style={{
+            background:'linear-gradient(135deg,rgba(255,215,0,0.2),rgba(255,100,0,0.2))',
+            border:'2px solid #ffd700', borderRadius:12, padding:'8px 24px',
+            fontFamily:'Russo One', fontSize:18, color:'#ffd700',
+            textShadow:'0 0 10px #ffd700', letterSpacing:2,
+            animation:'bounceIn 0.5s cubic-bezier(0.34,1.56,0.64,1)',
+          }}>🏆 NEW BEST SCORE!</div>
+        )}
+
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, width:'100%' }}>
+          {[
+            ['SCORE', score, '#ffd700'],
+            ['BEST', bestScore, '#aaa'],
+            ['HITS', totalCorrect, '#00ff88'],
+            ['LIVES LEFT', 0, '#ff4444'],
+          ].map(([label, val, color]) => (
+            <div key={label} style={{
+              textAlign:'center',
+              background:'linear-gradient(135deg,rgba(0,0,0,0.85),rgba(40,0,0,0.9))',
+              border:'2px solid #8b0000', borderRadius:14, padding:'12px 0',
+              boxShadow:'inset 0 2px 4px rgba(0,0,0,0.5)',
+            }}>
+              <div style={{ fontFamily:'Orbitron', fontSize:9, color:'#ff6600', letterSpacing:2, marginBottom:4 }}>{label}</div>
+              <div style={{ fontFamily:'Orbitron', fontSize:28, color, fontWeight:900, textShadow:`0 0 10px ${color}` }}>{val}</div>
+            </div>
+          ))}
+        </div>
+
+        <button onClick={onPlayAgain} style={{
+          width:'100%', height:68, borderRadius:18,
+          background:'linear-gradient(135deg,#ff2200,#cc0000 50%,#880000)',
+          border:'3px solid #ffd700',
+          boxShadow:'0 0 20px rgba(255,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.1)',
+          fontFamily:'Russo One', fontSize:28, letterSpacing:6, color:'#ffd700',
+          textShadow:'0 0 10px rgba(255,215,0,0.8)', cursor:'pointer',
+          animation:'pulseRing 2s infinite',
+        }}>▶ PLAY AGAIN</button>
+
+        <button onClick={onHome} style={{
+          width:'100%', height:52, borderRadius:14,
+          background:'transparent', border:'2px solid #8b0000',
+          fontFamily:'Russo One', fontSize:18, letterSpacing:4, color:'#ff6600',
+          cursor:'pointer',
+        }}>⌂ HOME</button>
+
+        {/* Fruit row */}
+        <div style={{ display:'flex', gap:8, justifyContent:'center' }}>
+          {FRUITS.map(f => (
+            <img key={f.id} src={f.img} alt={f.name} style={{ width:36, height:36, objectFit:'contain', opacity:0.8 }}/>
+          ))}
+        </div>
+      </div>
+    </Background>
+  );
+}
+
+// ── APP ROOT ──────────────────────────────────────────────────────────────────
+function App() {
+  const [screen, setScreen] = useState('splash');
+  const [bestScore, setBestScore] = useState(() => parseInt(localStorage.getItem('fs_best')||'0'));
+  const [bestStreak, setBestStreak] = useState(() => parseInt(localStorage.getItem('fs_streak')||'0'));
+  const [lastResult, setLastResult] = useState(null);
+
+  function handleGameOver(result) {
+    setLastResult(result);
+    if (result.score > bestScore) {
+      setBestScore(result.score);
+      localStorage.setItem('fs_best', result.score);
+    }
+    if (result.totalCorrect > bestStreak) {
+      setBestStreak(result.totalCorrect);
+      localStorage.setItem('fs_streak', result.totalCorrect);
+    }
+    setScreen('gameover');
+  }
+
+  return (
+    <div style={{ width:'100vw', height:'100vh', overflow:'hidden' }}>
+      {screen === 'splash' && <SplashScreen onDone={() => setScreen('home')}/>}
+      {screen === 'home' && <HomeScreen bestScore={bestScore} bestStreak={bestStreak} onPlay={() => setScreen('game')}/>}
+      {screen === 'game' && <GameScreen key={Date.now()} onGameOver={handleGameOver} bestScore={bestScore}/>}
+      {screen === 'gameover' && (
+        <GameOverScreen
+          score={lastResult?.score||0}
+          totalCorrect={lastResult?.totalCorrect||0}
+          bestScore={bestScore}
+          onPlayAgain={() => setScreen('game')}
+          onHome={() => setScreen('home')}
+        />
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

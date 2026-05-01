@@ -2,6 +2,8 @@ package app.krafted.fruitspin.viewmodel
 
 import kotlin.random.Random
 
+fun getSpeedDps(score: Int): Float = GameRules.speedForScore(score)
+
 internal object GameRules {
     const val WRONG_TAP_SLOWDOWN_MS = 450L
 
@@ -27,10 +29,11 @@ internal object GameRules {
     }
 
     fun speedForScore(score: Int): Float = when {
-        score < 150 -> 60f
-        score < 300 -> 90f
-        score < 500 -> 130f
-        else -> 180f
+        score < 50 -> 60f
+        score < 150 -> 90f
+        score < 300 -> 130f
+        score < 500 -> 170f
+        else -> 210f
     }
 
     fun backgroundForScore(score: Int): Int = when {
@@ -50,7 +53,10 @@ internal object GameRules {
     ): GameUiState {
         val streak = state.correctStreak + 1
         val multiplier = if (streak >= 10) 2 else 1
-        val score = state.score + (state.targetFruit.basePoints * multiplier)
+        val isJackpot = state.targetFruit == Fruit.LUCKY_7
+        val fruitMultiplier = if (isJackpot) 3 else 1
+        val points = state.targetFruit.basePoints * multiplier * fruitMultiplier
+        val score = state.score + points
         val targetProgress = state.correctTapsForCurrentTarget + 1
         val shouldChangeTarget = targetProgress >= 5
         val targetFruit = if (shouldChangeTarget) {
@@ -66,7 +72,12 @@ internal object GameRules {
             correctStreak = streak,
             scoreMultiplier = multiplier,
             currentSpeedDps = speedForScore(score),
-            correctTapsForCurrentTarget = if (shouldChangeTarget) 0 else targetProgress
+            correctTapsForCurrentTarget = if (shouldChangeTarget) 0 else targetProgress,
+            lastTapWasJackpot = isJackpot,
+            lastPointsEarned = points,
+            tapFeedback = if (isJackpot) TapFeedback.JACKPOT else TapFeedback.CORRECT,
+            targetIsFlipping = shouldChangeTarget,
+            speedBurst = speedForScore(score) > state.currentSpeedDps
         )
     }
 
@@ -78,7 +89,9 @@ internal object GameRules {
             correctStreak = 0,
             scoreMultiplier = 1,
             currentSpeedDps = speedForScore(state.score) / 2f,
-            isGameOver = lives == 0
+            isGameOver = lives == 0,
+            tapFeedback = TapFeedback.WRONG,
+            isShaking = true
         )
     }
 }

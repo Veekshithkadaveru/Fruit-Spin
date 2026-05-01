@@ -1,6 +1,9 @@
 package app.krafted.fruitspin.viewmodel
 
 import android.app.Application
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.krafted.fruitspin.data.db.AppDatabase
@@ -69,14 +72,69 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
+        when {
+            tappedFruit == null -> performHaptic(HapticType.MISS)
+            wasWrongTap -> performHaptic(HapticType.WRONG)
+            tappedFruit == Fruit.LUCKY_7 -> performHaptic(HapticType.JACKPOT)
+            else -> performHaptic(HapticType.CORRECT)
+        }
+
         if (wasWrongTap) {
             restoreSpeedAfterSlowdown()
         }
     }
 
+    private fun performHaptic(type: HapticType) {
+        val vibrator = getApplication<Application>().getSystemService(Vibrator::class.java)
+        vibrator?.let {
+            when (type) {
+                HapticType.CORRECT -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        it.vibrate(VibrationEffect.createOneShot(20, VibrationEffect.DEFAULT_AMPLITUDE))
+                    } else {
+                        it.vibrate(20)
+                    }
+                }
+                HapticType.WRONG -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        it.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 100, 50, 100), -1))
+                    } else {
+                        it.vibrate(longArrayOf(0, 100, 50, 100), -1)
+                    }
+                }
+                HapticType.JACKPOT -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        it.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 50, 30, 50, 30, 100), -1))
+                    } else {
+                        it.vibrate(longArrayOf(0, 50, 30, 50, 30, 100), -1)
+                    }
+                }
+                HapticType.MISS -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        it.vibrate(VibrationEffect.createOneShot(10, 30))
+                    } else {
+                        it.vibrate(10)
+                    }
+                }
+            }
+        }
+    }
+
+    private enum class HapticType {
+        CORRECT, WRONG, JACKPOT, MISS
+    }
+
     fun resetGame() {
         slowdownJob?.cancel()
         _uiState.value = GameUiState()
+    }
+
+    fun clearShake() {
+        _uiState.update { it.copy(isShaking = false) }
+    }
+
+    fun clearTapFeedback() {
+        _uiState.update { it.copy(tapFeedback = TapFeedback.NONE, speedBurst = false, targetIsFlipping = false) }
     }
 
     private fun restoreSpeedAfterSlowdown() {
