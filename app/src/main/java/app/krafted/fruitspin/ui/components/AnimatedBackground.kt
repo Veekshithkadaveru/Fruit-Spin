@@ -18,11 +18,9 @@ fun AnimatedBackground(
     content: @Composable () -> Unit
 ) {
     val targetBackground = when {
-        score < 50 -> R.drawable.back_1
-        score < 150 -> R.drawable.back_2
-        score < 300 -> R.drawable.back_3
-        score < 500 -> R.drawable.back_4
-        else -> R.drawable.back_5
+        score < 150 -> R.drawable.back_1
+        score < 300 -> R.drawable.back_2
+        else -> R.drawable.back_3
     }
 
     Crossfade(

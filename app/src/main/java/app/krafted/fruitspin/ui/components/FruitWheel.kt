@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -21,7 +20,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.*
 import androidx.compose.ui.res.imageResource
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.krafted.fruitspin.ui.theme.*
 import app.krafted.fruitspin.viewmodel.Fruit
@@ -55,24 +55,14 @@ fun FruitWheel(
     val borderWidth = if (tapFeedback != null && tapFeedback != TapFeedback.NONE) 8.dp else 5.dp
 
     val infiniteTransition = rememberInfiniteTransition(label = "fruit_pulse")
-    val basePulse by infiniteTransition.animateFloat(
-        initialValue = 0.52f,
-        targetValue = 0.58f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = EaseInOutSine),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "base_pulse"
-    )
-
-    val targetPulse by infiniteTransition.animateFloat(
-        initialValue = 0.55f,
-        targetValue = 0.68f,
+    val targetSizePulse by infiniteTransition.animateFloat(
+        initialValue = 0.26f,
+        targetValue = 0.30f,
         animationSpec = infiniteRepeatable(
             animation = tween(700, easing = EaseInOutSine),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "target_pulse"
+        label = "target_size_pulse"
     )
 
     val flashAnim = remember { Animatable(0f) }
@@ -197,124 +187,119 @@ fun FruitWheel(
                     if (imageBitmap != null) {
                         val angleInRadians =
                             Math.toRadians((startAngle + segmentAngle / 2).toDouble())
-                        val imageRadius = radius * 0.58f
+                        val imageRadius = radius * 0.55f
 
                         val imageX = center.x + imageRadius * cos(angleInRadians).toFloat()
                         val imageY = center.y + imageRadius * sin(angleInRadians).toFloat()
 
                         val isTarget = fruit == targetFruit
-                        val currentScale = if (isTarget) targetPulse else basePulse
+                        // Size is always relative to wheel radius — immune to bitmap resolution
+                        val drawSize = radius * (if (isTarget) targetSizePulse else 0.33f)
+                        val half = drawSize / 2f
 
-                        translate(
-                            left = imageX - imageBitmap.width / 2,
-                            top = imageY - imageBitmap.height / 2
+                        rotate(
+                            degrees = startAngle + segmentAngle / 2 + 90f,
+                            pivot = Offset(imageX, imageY)
                         ) {
-                            rotate(
-                                degrees = startAngle + segmentAngle / 2 + 90f,
-                                pivot = Offset(imageBitmap.width / 2f, imageBitmap.height / 2f)
-                            ) {
-                                scale(
-                                    scale = currentScale,
-                                    pivot = Offset(imageBitmap.width / 2f, imageBitmap.height / 2f)
-                                ) {
-                                   drawCircle(
-                                    brush = Brush.radialGradient(
-                                        colors = listOf(
-                                            fruit.glowColor.copy(alpha = 0.8f),
-                                            fruit.glowColor.copy(alpha = 0.3f),
-                                            Color.Transparent
-                                        )
+                            // Glow halo sized to match draw area
+                            drawCircle(
+                                brush = Brush.radialGradient(
+                                    colors = listOf(
+                                        fruit.glowColor.copy(alpha = if (isTarget) 0.7f else 0.4f),
+                                        Color.Transparent
                                     ),
-                                    radius = imageBitmap.width.coerceAtLeast(imageBitmap.height)
-                                        .toFloat() / 1.3f,
-                                    center = Offset(imageBitmap.width / 2f, imageBitmap.height / 2f)
-                                    )
-                                  drawCircle(
-                                    color = MetallicGold.copy(alpha = 0.6f),
-                                    radius = imageBitmap.width.coerceAtLeast(imageBitmap.height)
-                                        .toFloat() / 1.2f,
-                                    center =
-                                        Offset(imageBitmap.width / 2f, imageBitmap.height / 2f),
-                                    style = Stroke(width = 3.dp.toPx())
-                                    )
-                                }
+                                    center = Offset(imageX, imageY),
+                                    radius = drawSize * 0.8f
+                                ),
+                                radius = drawSize * 0.8f,
+                                center = Offset(imageX, imageY)
+                            )
 
-                                    drawImage(image = imageBitmap)
-                                }
-                            }
+                            drawImage(
+                                image = imageBitmap,
+                                dstOffset = IntOffset(
+                                    (imageX - half).toInt(),
+                                    (imageY - half).toInt()
+                                ),
+                                dstSize = IntSize(
+                                    drawSize.toInt(),
+                                    drawSize.toInt()
+                                )
+                            )
                         }
                     }
                 }
 
-            val hubRadius = radius * 0.15f
+                val hubRadius = radius * 0.15f
 
-            drawCircle(
-                color = Color.Black.copy(alpha = 0.3f),
-                radius = hubRadius + 4.dp.toPx(),
-                center = Offset(center.x + 2.dp.toPx(), center.y + 2.dp.toPx())
-            )
-
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(
-                        MetallicGoldShine,
-                        MetallicGoldLight,
-                        MetallicGold,
-                        MetallicGoldDark
-                    ),
-                    center = Offset(center.x - hubRadius * 0.3f, center.y - hubRadius * 0.3f),
-                    radius = hubRadius * 1.2f
-                ),
-                radius = hubRadius,
-                center = center
-            )
-
-            drawCircle(
-                brush = Brush.sweepGradient(
-                    colors = listOf(
-                        MetallicGoldDark,
-                        MetallicGold,
-                        MetallicGoldLight,
-                        MetallicGold,
-                        MetallicGoldDark
-                    ),
-                    center = center
-                ),
-                radius = hubRadius,
-                center = center,
-                style = Stroke(width = 4.dp.toPx())
-            )
-
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(
-                        RubyRedDark,
-                        GlossyRedDark
-                    ),
-                    center = center,
-                    radius = hubRadius * 0.5f
-                ),
-                radius = hubRadius * 0.5f,
-                center = center
-            )
-
-            drawCircle(
-                color = MetallicGoldShine,
-                radius = hubRadius * 0.15f,
-                center = center
-            )
-
-            if (flashAnim.value > 0f) {
                 drawCircle(
-                    color = when (tapFeedback) {
-                        TapFeedback.CORRECT -> EmeraldGreen
-                        TapFeedback.WRONG -> RubyRed
-                        TapFeedback.JACKPOT -> MetallicGold
-                        else -> Color.Transparent
-                    }.copy(alpha = flashAnim.value),
-                    radius = radius,
+                    color = Color.Black.copy(alpha = 0.3f),
+                    radius = hubRadius + 4.dp.toPx(),
+                    center = Offset(center.x + 2.dp.toPx(), center.y + 2.dp.toPx())
+                )
+
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            MetallicGoldShine,
+                            MetallicGoldLight,
+                            MetallicGold,
+                            MetallicGoldDark
+                        ),
+                        center = Offset(center.x - hubRadius * 0.3f, center.y - hubRadius * 0.3f),
+                        radius = hubRadius * 1.2f
+                    ),
+                    radius = hubRadius,
                     center = center
                 )
+
+                drawCircle(
+                    brush = Brush.sweepGradient(
+                        colors = listOf(
+                            MetallicGoldDark,
+                            MetallicGold,
+                            MetallicGoldLight,
+                            MetallicGold,
+                            MetallicGoldDark
+                        ),
+                        center = center
+                    ),
+                    radius = hubRadius,
+                    center = center,
+                    style = Stroke(width = 4.dp.toPx())
+                )
+
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            RubyRedDark,
+                            GlossyRedDark
+                        ),
+                        center = center,
+                        radius = hubRadius * 0.5f
+                    ),
+                    radius = hubRadius * 0.5f,
+                    center = center
+                )
+
+                drawCircle(
+                    color = MetallicGoldShine,
+                    radius = hubRadius * 0.15f,
+                    center = center
+                )
+
+                if (flashAnim.value > 0f) {
+                    drawCircle(
+                        color = when (tapFeedback) {
+                            TapFeedback.CORRECT -> EmeraldGreen
+                            TapFeedback.WRONG -> RubyRed
+                            TapFeedback.JACKPOT -> MetallicGold
+                            else -> Color.Transparent
+                        }.copy(alpha = flashAnim.value),
+                        radius = radius,
+                        center = center
+                    )
+                }
             }
         }
     }
@@ -336,103 +321,4 @@ private fun darkenColor(color: Color, factor: Float): Color {
         blue = (color.blue - factor).coerceIn(0f, 1f),
         alpha = color.alpha
     )
-}
-
-@Composable
-fun MiniFruitWheel(
-    rotationAngle: Float,
-    modifier: Modifier = Modifier,
-    wheelSize: Dp = 180.dp
-) {
-    val fruits = Fruit.values()
-    val segmentAngle = 360f / fruits.size
-
-    val imageBitmaps = fruits.associateWith { fruit ->
-        ImageBitmap.imageResource(id = fruit.drawableRes)
-    }
-
-    val colors = fruits.map { it.glowColor }
-
-    Box(
-        modifier = modifier
-            .size(wheelSize)
-            .shadow(
-                elevation = 12.dp,
-                spotColor = MetallicGold.copy(alpha = 0.4f),
-                shape = CircleShape
-            )
-            .border(
-                width = 3.dp,
-                color = MetallicGold,
-                shape = CircleShape
-            )
-    ) {
-        Canvas(modifier = Modifier
-            .fillMaxSize()
-            .padding(8.dp)) {
-            val canvasSize = this.size
-            val center = Offset(canvasSize.width / 2, canvasSize.height / 2)
-            val radius = canvasSize.width / 2
-
-            rotate(degrees = rotationAngle, pivot = center) {
-                fruits.forEachIndexed { index, fruit ->
-                    val startAngle = index * segmentAngle
-
-                    drawArc(
-                        color = colors[index],
-                        startAngle = startAngle,
-                        sweepAngle = segmentAngle,
-                        useCenter = true,
-                        topLeft = Offset(center.x - radius, center.y - radius),
-                        size = Size(radius * 2, radius * 2)
-                    )
-
-                    val imageBitmap = imageBitmaps[fruit]
-                    if (imageBitmap != null) {
-                        val angleInRadians =
-                            Math.toRadians((startAngle + segmentAngle / 2).toDouble())
-                        val imageRadius = radius * 0.6f
-
-                        val imageX = center.x + imageRadius * cos(angleInRadians).toFloat()
-                        val imageY = center.y + imageRadius * sin(angleInRadians).toFloat()
-
-                        translate(
-                            left = imageX - imageBitmap.width / 2,
-                            top = imageY - imageBitmap.height / 2
-                        ) {
-                            rotate(
-                                degrees = startAngle + segmentAngle / 2 + 90f,
-                                pivot = Offset(imageBitmap.width / 2f, imageBitmap.height / 2f)
-                            ) {
-                                scale(
-                                    scale = 0.45f,
-                                    pivot = Offset(imageBitmap.width / 2f, imageBitmap.height / 2f)
-                                ) {
-                                    drawImage(image = imageBitmap)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            val hubRadius = radius * 0.12f
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(MetallicGoldLight, MetallicGold, MetallicGoldDark),
-                    center = Offset(center.x - hubRadius * 0.3f, center.y - hubRadius * 0.3f),
-                    radius = hubRadius
-                ),
-                radius = hubRadius,
-                center = center
-            )
-
-            drawCircle(
-                color = MetallicGold,
-                radius = hubRadius,
-                center = center,
-                style = Stroke(width = 2.dp.toPx())
-            )
-        }
-    }
 }

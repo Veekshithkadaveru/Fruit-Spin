@@ -57,8 +57,7 @@ internal object GameRules {
         val fruitMultiplier = if (isJackpot) 3 else 1
         val points = state.targetFruit.basePoints * multiplier * fruitMultiplier
         val score = state.score + points
-        val targetProgress = state.correctTapsForCurrentTarget + 1
-        val shouldChangeTarget = targetProgress >= 5
+        val shouldChangeTarget = true
         val targetFruit = if (shouldChangeTarget) {
             nextTarget(state.targetFruit).takeIf { it != state.targetFruit }
                 ?: randomTargetDifferentFrom(state.targetFruit)
@@ -72,7 +71,7 @@ internal object GameRules {
             correctStreak = streak,
             scoreMultiplier = multiplier,
             currentSpeedDps = speedForScore(score),
-            correctTapsForCurrentTarget = if (shouldChangeTarget) 0 else targetProgress,
+            correctTapsForCurrentTarget = 0,
             lastTapWasJackpot = isJackpot,
             lastPointsEarned = points,
             tapFeedback = if (isJackpot) TapFeedback.JACKPOT else TapFeedback.CORRECT,

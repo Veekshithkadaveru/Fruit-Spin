@@ -36,8 +36,6 @@ fun TargetDisplay(
     isFlipping: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val tapsRemaining = (5 - correctTapsForCurrentTarget).coerceAtLeast(0)
-    val progress = correctTapsForCurrentTarget / 5f
     val points = if (targetFruit == Fruit.LUCKY_7) targetFruit.basePoints * 3 else targetFruit.basePoints
     val isJackpot = targetFruit == Fruit.LUCKY_7
 
@@ -78,16 +76,6 @@ fun TargetDisplay(
             repeatMode = RepeatMode.Reverse
         ),
         label = "glow_alpha"
-    )
-
-    val showTrophy by remember(correctTapsForCurrentTarget) {
-        derivedStateOf { correctTapsForCurrentTarget >= 4 }
-    }
-
-    val trophyScale by animateFloatAsState(
-        targetValue = if (showTrophy) 1f else 0f,
-        animationSpec = spring(stiffness = 400f, dampingRatio = 0.5f),
-        label = "trophy_scale"
     )
 
     Box(
@@ -182,40 +170,13 @@ fun TargetDisplay(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    LinearProgressIndicator(
-                        progress = { progress },
-                        modifier = Modifier
-                            .fillMaxWidth(0.7f)
-                            .height(6.dp)
-                            .clip(RoundedCornerShape(3.dp)),
-                        color = baseColor,
-                        trackColor = Color.DarkGray.copy(alpha = 0.5f),
-                        drawStopIndicator = {}
-                    )
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Hit ",
-                            style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
-                            color = Platinum.copy(alpha = 0.7f)
-                        )
-
-                        AnimatedCounter(
-                            value = tapsRemaining,
-                            style = CounterTextStyle.copy(
-                                fontSize = CounterTextStyle.fontSize * 0.4
-                            ),
-                            glowColor = baseColor
-                        )
-
-                        Text(
-                            text = " more · +${points}pts",
-                            style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
-                            color = Platinum.copy(alpha = 0.7f)
+                            text = "Reward: +${points}pts",
+                            style = androidx.compose.material3.MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                            color = Platinum.copy(alpha = 0.9f)
                         )
                     }
                 }
@@ -272,27 +233,6 @@ fun TargetDisplay(
                                 fontWeight = FontWeight.Black,
                                 color = Color.Black,
                                 textAlign = TextAlign.Center
-                            )
-                        }
-                    }
-
-                    if (trophyScale > 0f) {
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .graphicsLayer {
-                                    scaleX = trophyScale
-                                    scaleY = trophyScale
-                                }
-                                .background(
-                                    color = MetallicGold.copy(alpha = 0.9f),
-                                    shape = RoundedCornerShape(6.dp)
-                                )
-                                .padding(horizontal = 6.dp, vertical = 3.dp)
-                        ) {
-                            Text(
-                                text = "🏆",
-                                fontSize = 16.sp
                             )
                         }
                     }

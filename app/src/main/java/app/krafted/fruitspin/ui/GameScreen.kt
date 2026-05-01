@@ -1,7 +1,16 @@
 package app.krafted.fruitspin.ui
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -12,10 +21,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.krafted.fruitspin.ui.animations.*
 import app.krafted.fruitspin.ui.components.*
@@ -185,6 +198,13 @@ fun GameScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
+                MultiplierBanner(
+                    active = uiState.scoreMultiplier >= 2,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
                 SpeedIndicator(
                     speedDps = uiState.currentSpeedDps,
                     speedBurst = uiState.speedBurst,
@@ -198,12 +218,6 @@ fun GameScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(
-                        modifier = Modifier.padding(bottom = 4.dp)
-                    ) {
-                        PointerIndicator()
-                    }
-
-                    Box(
                         modifier = Modifier.fillMaxWidth(0.88f),
                         contentAlignment = Alignment.Center
                     ) {
@@ -212,6 +226,12 @@ fun GameScreen(
                             tapFeedback = uiState.tapFeedback,
                             targetFruit = uiState.targetFruit
                         )
+                    }
+
+                    Box(
+                        modifier = Modifier.padding(top = 4.dp)
+                    ) {
+                        PointerIndicator()
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -226,6 +246,74 @@ fun GameScreen(
 
                 Spacer(modifier = Modifier.weight(0.3f))
             }
+        }
+    }
+}
+
+@Composable
+fun MultiplierBanner(
+    active: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val pulseTransition = rememberInfiniteTransition(label = "multiplier_pulse")
+    val pulseScale by pulseTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.06f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(500, easing = EaseInOutSine),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "mult_scale"
+    )
+    val glowAlpha by pulseTransition.animateFloat(
+        initialValue = 0.6f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(500, easing = EaseInOutSine),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "mult_glow"
+    )
+
+    AnimatedVisibility(
+        visible = active,
+        enter = fadeIn(tween(300)) + scaleIn(initialScale = 0.7f, animationSpec = spring(stiffness = 400f, dampingRatio = 0.5f)),
+        exit = fadeOut(tween(200)) + scaleOut(targetScale = 0.8f)
+    ) {
+        Box(
+            modifier = modifier
+                .fillMaxWidth()
+                .graphicsLayer {
+                    scaleX = pulseScale
+                    scaleY = pulseScale
+                }
+                .clip(RoundedCornerShape(16.dp))
+                .background(
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(
+                            MetallicGoldDark.copy(alpha = 0.9f),
+                            MetallicGold.copy(alpha = 0.95f),
+                            MetallicGoldDark.copy(alpha = 0.9f)
+                        )
+                    )
+                )
+                .border(
+                    width = 2.dp,
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(MetallicGoldShine, NeonGold, MetallicGoldShine)
+                    ),
+                    shape = RoundedCornerShape(16.dp)
+                )
+                .padding(vertical = 10.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "🔥  x2 MULTIPLIER ACTIVE!  🔥",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Black,
+                color = Color.Black.copy(alpha = glowAlpha),
+                letterSpacing = 1.sp
+            )
         }
     }
 }

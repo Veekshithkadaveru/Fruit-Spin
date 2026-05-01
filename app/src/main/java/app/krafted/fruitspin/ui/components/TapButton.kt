@@ -60,49 +60,53 @@ fun PointerIndicator(modifier: Modifier = Modifier) {
         val width = size.width
         val height = size.height
         val centerX = width / 2
-        val topY = 0f
-        val bottomY = height * 0.6f
+        val tipY = 0f                       // tip points UP toward the wheel
+        val baseY = height * 0.6f
         val leftX = centerX - width * 0.25f
         val rightX = centerX + width * 0.25f
 
+        // Glow halo around the tip
         drawCircle(
             color = NeonGold.copy(alpha = glowAlpha.value * 0.5f),
             radius = width * 0.6f,
-            center = Offset(centerX, bottomY * 0.6f)
+            center = Offset(centerX, tipY + width * 0.1f)
         )
 
+        // Left wing → tip
+        drawLine(
+            brush = Brush.linearGradient(
+                colors = listOf(MetallicGold, NeonGold),
+                start = Offset(leftX, baseY),
+                end = Offset(centerX, tipY)
+            ),
+            start = Offset(leftX, baseY),
+            end = Offset(centerX, tipY),
+            strokeWidth = 6f,
+            cap = StrokeCap.Round
+        )
+
+        // Right wing → tip
+        drawLine(
+            brush = Brush.linearGradient(
+                colors = listOf(MetallicGold, NeonGold),
+                start = Offset(rightX, baseY),
+                end = Offset(centerX, tipY)
+            ),
+            start = Offset(rightX, baseY),
+            end = Offset(centerX, tipY),
+            strokeWidth = 6f,
+            cap = StrokeCap.Round
+        )
+
+        // Vertical stem downward from base
         drawLine(
             brush = Brush.verticalGradient(
                 colors = listOf(NeonGold, MetallicGold),
-                startY = topY,
-                endY = bottomY
+                startY = baseY,
+                endY = height
             ),
-            start = Offset(centerX, topY),
-            end = Offset(centerX, bottomY),
-            strokeWidth = 6f,
-            cap = StrokeCap.Round
-        )
-
-        drawLine(
-            brush = Brush.linearGradient(
-                colors = listOf(NeonGold, MetallicGold),
-                start = Offset(leftX, bottomY * 0.5f),
-                end = Offset(centerX, bottomY)
-            ),
-            start = Offset(leftX, bottomY * 0.5f),
-            end = Offset(centerX, bottomY),
-            strokeWidth = 6f,
-            cap = StrokeCap.Round
-        )
-
-        drawLine(
-            brush = Brush.linearGradient(
-                colors = listOf(NeonGold, MetallicGold),
-                start = Offset(rightX, bottomY * 0.5f),
-                end = Offset(centerX, bottomY)
-            ),
-            start = Offset(rightX, bottomY * 0.5f),
-            end = Offset(centerX, bottomY),
+            start = Offset(centerX, baseY),
+            end = Offset(centerX, height),
             strokeWidth = 6f,
             cap = StrokeCap.Round
         )

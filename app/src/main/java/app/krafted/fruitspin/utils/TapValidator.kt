@@ -6,7 +6,7 @@ import kotlin.math.abs
 object TapValidator {
 
     private const val SEGMENT_ANGLE = 360f / 7f
-    private const val POINTER_ANGLE = 270f
+    private const val POINTER_ANGLE = 90f
     private const val TOLERANCE = 15f
 
     fun validateTap(rotationAngle: Float): Fruit? {
